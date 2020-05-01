@@ -1,4 +1,4 @@
-import { reNormalAddressing, reIndexedAddressing } from './snippets/assembler-e79716fcbaa7f3b4/js_snippets/regex.js';
+import { reNormalAddressing, reIndexedAddressing } from '/cr6502emu_demo/snippets/assembler-e79716fcbaa7f3b4/js_snippets/regex.js';
 import { Logger } from './static/jsm/assembler/logger.js';
 
 let wasm;
