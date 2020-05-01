@@ -20,7 +20,7 @@ export class Logger {
         let template = `
             <div class="message ${msgClass}">
                 <div style="width: 8em;float: left;border-right: 2px solid; margin-right: 1em">
-                    <span>line: ${this.currentLine}</span>
+                    <span>line: ${this.currentLine || "?"}</span>
                 </div>
                 <div class="msg-content"></div>
             </div>
@@ -50,7 +50,7 @@ export class Logger {
     static write(obj) {
         let node =  document.createElement("span");
 
-        node.innerText = " " + String(obj) + " "
+        node.innerText = obj;
         this.writeNode.appendChild(node);
     }
 
@@ -69,6 +69,20 @@ export class Logger {
             this.workingNode= null;
             this.writeNode = null;
         }
+    }
+
+    static genericMessage(kind, msg) {
+        Logger.beginGeneric(kind);
+        Logger.write(msg);
+        Logger.endMessage();
+    }
+
+    static genericExplainedCode(kind, msg1, err, msg2) {
+        Logger.beginGeneric(kind);
+        Logger.write(msg1);
+        Logger.writeCode(err);
+        Logger.write(msg2);
+        Logger.endMessage();
     }
 
 
