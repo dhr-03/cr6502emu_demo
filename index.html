@@ -21,7 +21,7 @@
 
             document.querySelector("#build_ts").innerText = build_date();
 
-            let assembler = new Assembler(0);
+            let assembler = new Assembler();
 
             let btn = document.querySelector("#assemble");
             btn.addEventListener("click", function () {
@@ -115,14 +115,10 @@
         output limited to 30 bytes
     </div>
     <textarea rows="20" cols="60" id="input">
-        label1:
-        LDA #lo label1
-        LDA #hi label1
-        LDA #55
-        LDA #$37
-        LDA #b110111
+        #store u8 55
+        #store u16 550
+        #store asciiz test text
 
-        STA %label1
         STA %notyetdef
 
         ROL
@@ -131,9 +127,6 @@
         notyetdef:
         BEQ *5 ;relative
         BEQ *-5
-
-        STA $00AA,X
-        JMP (%label1) ;indirect
 
 
     </textarea>
