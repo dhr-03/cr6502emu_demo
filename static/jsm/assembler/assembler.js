@@ -1,5 +1,5 @@
 import { Logger } from './logger.js';
-import { reNormalAddressing, reIndexedAddressing } from './snippets/assembler-e79716fcbaa7f3b4/js_snippets/regex.js';
+import { reCommon, reNormalAddressing, reIndexedAddressing } from './snippets/assembler-e79716fcbaa7f3b4/js_snippets/regex.js';
 
 let wasm;
 
@@ -38,17 +38,10 @@ function getUint8Memory0() {
 function getStringFromWasm0(ptr, len) {
     return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
 }
-
-let cachegetUint32Memory0 = null;
-function getUint32Memory0() {
-    if (cachegetUint32Memory0 === null || cachegetUint32Memory0.buffer !== wasm.memory.buffer) {
-        cachegetUint32Memory0 = new Uint32Array(wasm.memory.buffer);
-    }
-    return cachegetUint32Memory0;
-}
-
-function getArrayU32FromWasm0(ptr, len) {
-    return getUint32Memory0().subarray(ptr / 4, ptr / 4 + len);
+/**
+*/
+export function set_panic_hook() {
+    wasm.set_panic_hook();
 }
 
 let cachegetInt32Memory0 = null;
@@ -70,6 +63,18 @@ export function build_date() {
     } finally {
         wasm.__wbindgen_free(r0, r1);
     }
+}
+
+let cachegetUint32Memory0 = null;
+function getUint32Memory0() {
+    if (cachegetUint32Memory0 === null || cachegetUint32Memory0.buffer !== wasm.memory.buffer) {
+        cachegetUint32Memory0 = new Uint32Array(wasm.memory.buffer);
+    }
+    return cachegetUint32Memory0;
+}
+
+function getArrayU32FromWasm0(ptr, len) {
+    return getUint32Memory0().subarray(ptr / 4, ptr / 4 + len);
 }
 
 let WASM_VECTOR_LEN = 0;
@@ -125,11 +130,6 @@ function passStringToWasm0(arg, malloc, realloc) {
 
     WASM_VECTOR_LEN = offset;
     return ptr;
-}
-/**
-*/
-export function set_panic_hook() {
-    wasm.set_panic_hook();
 }
 
 function addHeapObject(obj) {
@@ -214,14 +214,20 @@ async function init(input) {
     }
     const imports = {};
     imports.wbg = {};
+    imports.wbg.__wbg_setCurrentLine_42f7eeb0c004c423 = function(arg0) {
+        Logger.setCurrentLine(arg0 >>> 0);
+    };
+    imports.wbg.__wbg_genericMessage_3905ac931a025bc3 = function(arg0, arg1, arg2, arg3) {
+        Logger.genericMessage(getStringFromWasm0(arg0, arg1), getStringFromWasm0(arg2, arg3));
+    };
+    imports.wbg.__wbg_reCommon_50083c0047924fb4 = function(arg0, arg1, arg2, arg3) {
+        reCommon(getStringFromWasm0(arg0, arg1), getArrayU32FromWasm0(arg2, arg3));
+    };
     imports.wbg.__wbg_reNormalAddressing_25df4a7c4b533b98 = function(arg0, arg1, arg2, arg3) {
         reNormalAddressing(getStringFromWasm0(arg0, arg1), getArrayU32FromWasm0(arg2, arg3));
     };
     imports.wbg.__wbg_reIndexedAddressing_d447c4e896ace7dc = function(arg0, arg1, arg2, arg3) {
         reIndexedAddressing(getStringFromWasm0(arg0, arg1), getArrayU32FromWasm0(arg2, arg3));
-    };
-    imports.wbg.__wbg_genericMessage_3905ac931a025bc3 = function(arg0, arg1, arg2, arg3) {
-        Logger.genericMessage(getStringFromWasm0(arg0, arg1), getStringFromWasm0(arg2, arg3));
     };
     imports.wbg.__wbg_genericExplainedCode_9e90aff4c43288af = function(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
         Logger.genericExplainedCode(getStringFromWasm0(arg0, arg1), getStringFromWasm0(arg2, arg3), getStringFromWasm0(arg4, arg5), getStringFromWasm0(arg6, arg7));
@@ -237,9 +243,6 @@ async function init(input) {
     };
     imports.wbg.__wbg_endMessage_d1a864c2be12c3a5 = function() {
         Logger.endMessage();
-    };
-    imports.wbg.__wbg_setCurrentLine_42f7eeb0c004c423 = function(arg0) {
-        Logger.setCurrentLine(arg0 >>> 0);
     };
     imports.wbg.__wbg_msgHandled_80ba449bb419716f = function() {
         var ret = Logger.msgHandled();
