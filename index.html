@@ -11,20 +11,20 @@
     </script>
 
     <script type="module">
-        import init, {Assembler, set_panic_hook, build_date} from './static/jsm/assembler/assembler.js';
+        import {default as asmInit, Assembler, set_panic_hook}from './static/jsm/assembler/assembler.js';
+
+        import {default as sysInit, CPU, set_panic_hook as set_panic_hook_sys} from './static/jsm/system/system.js';
 
         async function run() {
 
-            let wasm = await init();
+            let wasmAsm = await asmInit();
+            let wasmSys = await sysInit();
 
             set_panic_hook();
-
-            document.querySelector("#build_ts").innerText = build_date();
+            set_panic_hook_sys();
 
             let assembler = new Assembler();
-
-            let btn = document.querySelector("#assemble");
-            btn.addEventListener("click", function () {
+            document.querySelector("#assemble").addEventListener("click", function () {
 
                 if (document.querySelector("#clear-log").checked) {
                     document.querySelector("#log").innerHTML = "";
@@ -36,18 +36,27 @@
 
 
                 if (ptr !== 0) {
-                    let output = new Uint8Array(wasm.memory.buffer, ptr, 30);
+                    let output = new Uint8Array(wasmAsm.memory.buffer, ptr, 50);
                     let hexData = [];
                     for (let b of output) hexData.push(
                         b.toString(16).padStart(2, "0").toUpperCase())
                     ;
 
                     console.table(hexData);
+
+                    cpu.tmp_clone_rom(output);
+
                 } else {
                     console.error("parse error");
                 }
 
             });
+
+            let cpu = new CPU();
+            document.querySelector("#tick").addEventListener("click", function () {
+                cpu.tick();
+                document.querySelector("#cpuStatus").innerHTML = cpu.to_str();
+            })
         }
 
         run();
@@ -101,13 +110,7 @@
 <body>
 
 <div class="gui" style="text-align: center">
-    <div>
-        <b>Build:</b> <span id="build_ts"></span>
-    </div>
-
-    <hr>
-
-    <div id="result">
+      <div id="result">
         open the console <b>BEFORE</b> assembling
         <br>
         otherwise, <code>console.table</code> wont work
@@ -115,51 +118,28 @@
         output limited to 50 bytes
     </div>
     <textarea rows="20" cols="60" id="input">
-
-        label:
-
         LDA #10
-        #CAR 10 ; #CAR $A
+        LDX #$A
+        LDY #10
 
-        ;############
+        INX
+        INY
 
-        LDA 10
-        #CAR (10) ; #CAR (%label)
+        INX
+        INY
 
-        ;############
+        ADC #5
+        SBC #15 ;flag Z
 
-        STA 5
-        #ALM (5)
+        CMP #0 ;flag Z, carry (>=)
 
-        ;############
-        ADC #10
-        #SUM 10
+        LDA #1
+        ASL
+        ASL
+        LSR
+        LSR
 
-        ADC 10
-        #SUM (10)
-
-        ;############
-
-        JMP %label
-        #IR (%label) ; #IR (0)
-
-        ;############
-
-        BEQ &0
-        #SI0 (0)
-
-        ;############
-
-        JSR %label
-        #SUB (%label)
-
-        ;############
-
-        RTS
-        #RET
-
-
-
+        LSR ;set carry, set zero
 
 
     </textarea>
@@ -171,6 +151,9 @@
     </label>
 
 </div>
+
+<button id="tick">Tick</button>
+<span id="cpuStatus"></span>
 
 <div class="demo" id="log"></div>
 </body>
