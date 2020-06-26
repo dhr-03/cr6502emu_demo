@@ -1,5 +1,3 @@
-import { Logger } from './logger.js';
-import { reCommon, reNormalAddressing, reIndexedAddressing } from './snippets/assembler-e79716fcbaa7f3b4/js_snippets/regex.js';
 
 let wasm;
 
@@ -38,22 +36,27 @@ function getUint8Memory0() {
 function getStringFromWasm0(ptr, len) {
     return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
 }
+
+let cachegetInt32Memory0 = null;
+function getInt32Memory0() {
+    if (cachegetInt32Memory0 === null || cachegetInt32Memory0.buffer !== wasm.memory.buffer) {
+        cachegetInt32Memory0 = new Int32Array(wasm.memory.buffer);
+    }
+    return cachegetInt32Memory0;
+}
 /**
 */
 export function set_panic_hook() {
     wasm.set_panic_hook();
 }
 
-let cachegetUint32Memory0 = null;
-function getUint32Memory0() {
-    if (cachegetUint32Memory0 === null || cachegetUint32Memory0.buffer !== wasm.memory.buffer) {
-        cachegetUint32Memory0 = new Uint32Array(wasm.memory.buffer);
-    }
-    return cachegetUint32Memory0;
-}
+function addHeapObject(obj) {
+    if (heap_next === heap.length) heap.push(heap.length + 1);
+    const idx = heap_next;
+    heap_next = heap[idx];
 
-function getArrayU32FromWasm0(ptr, len) {
-    return getUint32Memory0().subarray(ptr / 4, ptr / 4 + len);
+    heap[idx] = obj;
+    return idx;
 }
 
 let WASM_VECTOR_LEN = 0;
@@ -110,29 +113,15 @@ function passStringToWasm0(arg, malloc, realloc) {
     WASM_VECTOR_LEN = offset;
     return ptr;
 }
-
-function addHeapObject(obj) {
-    if (heap_next === heap.length) heap.push(heap.length + 1);
-    const idx = heap_next;
-    heap_next = heap[idx];
-
-    heap[idx] = obj;
-    return idx;
-}
-
-let cachegetInt32Memory0 = null;
-function getInt32Memory0() {
-    if (cachegetInt32Memory0 === null || cachegetInt32Memory0.buffer !== wasm.memory.buffer) {
-        cachegetInt32Memory0 = new Int32Array(wasm.memory.buffer);
-    }
-    return cachegetInt32Memory0;
-}
 /**
 */
-export class Assembler {
+export const DeviceId = Object.freeze({ Rom:100,Ram:101, });
+/**
+*/
+export class System {
 
     static __wrap(ptr) {
-        const obj = Object.create(Assembler.prototype);
+        const obj = Object.create(System.prototype);
         obj.ptr = ptr;
 
         return obj;
@@ -142,23 +131,94 @@ export class Assembler {
         const ptr = this.ptr;
         this.ptr = 0;
 
-        wasm.__wbg_assembler_free(ptr);
+        wasm.__wbg_system_free(ptr);
     }
     /**
     */
     constructor() {
-        var ret = wasm.assembler_new();
-        return Assembler.__wrap(ret);
+        var ret = wasm.system_new();
+        return System.__wrap(ret);
     }
     /**
-    * @param {string} lines
-    * @returns {number}
+    * @returns {System}
     */
-    assemble(lines) {
-        var ptr0 = passStringToWasm0(lines, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        var len0 = WASM_VECTOR_LEN;
-        var ret = wasm.assembler_assemble(this.ptr, ptr0, len0);
-        return ret;
+    static with_default_mem_map() {
+        var ret = wasm.system_with_default_mem_map();
+        return System.__wrap(ret);
+    }
+    /**
+    */
+    tick() {
+        wasm.system_tick(this.ptr);
+    }
+    /**
+    * @param {number} amm
+    */
+    tick_x(amm) {
+        wasm.system_tick_x(this.ptr, amm);
+    }
+    /**
+    * Resets the system, clearing all non-persistent data containers.
+    */
+    reset_system() {
+        wasm.system_reset_system(this.ptr);
+    }
+    /**
+    * Resets the system, clearing all data containers, including persistent ones like the rom.
+    */
+    reset_hard() {
+        wasm.system_reset_hard(this.ptr);
+    }
+    /**
+    * @param {number} device
+    * @param {number} start
+    * @param {number} size
+    * @returns {boolean}
+    */
+    add_device(device, start, size) {
+        var ret = wasm.system_add_device(this.ptr, device, start, size);
+        return ret !== 0;
+    }
+    /**
+    * @param {number} index
+    * @returns {boolean}
+    */
+    remove_device(index) {
+        var ret = wasm.system_remove_device(this.ptr, index);
+        return ret !== 0;
+    }
+    /**
+    * WARNING: Raw pointers might cause system instability,
+    * make sure you know what you're doing.
+    * @param {number} index
+    * @returns {number | undefined}
+    */
+    UNSAFE_device_data_ptr(index) {
+        wasm.system_UNSAFE_device_data_ptr(8, this.ptr, index);
+        var r0 = getInt32Memory0()[8 / 4 + 0];
+        var r1 = getInt32Memory0()[8 / 4 + 1];
+        return r0 === 0 ? undefined : r1 >>> 0;
+    }
+    /**
+    * @param {number} index
+    * @returns {number | undefined}
+    */
+    device_size(index) {
+        var ret = wasm.system_device_size(this.ptr, index);
+        return ret === 0xFFFFFF ? undefined : ret;
+    }
+    /**
+    * @returns {string}
+    */
+    tmp_to_str() {
+        try {
+            wasm.system_tmp_to_str(8, this.ptr);
+            var r0 = getInt32Memory0()[8 / 4 + 0];
+            var r1 = getInt32Memory0()[8 / 4 + 1];
+            return getStringFromWasm0(r0, r1);
+        } finally {
+            wasm.__wbindgen_free(r0, r1);
+        }
     }
 }
 
@@ -201,48 +261,11 @@ async function init(input) {
     }
     const imports = {};
     imports.wbg = {};
-    imports.wbg.__wbg_setCurrentLine_42f7eeb0c004c423 = function(arg0) {
-        Logger.setCurrentLine(arg0 >>> 0);
+    imports.wbg.__wbg_alert2_626011e8776e6900 = function(arg0, arg1, arg2, arg3) {
+        alert_2(getStringFromWasm0(arg0, arg1), getStringFromWasm0(arg2, arg3));
     };
-    imports.wbg.__wbg_genericMessage_3905ac931a025bc3 = function(arg0, arg1, arg2, arg3) {
-        Logger.genericMessage(getStringFromWasm0(arg0, arg1), getStringFromWasm0(arg2, arg3));
-    };
-    imports.wbg.__wbg_reCommon_50083c0047924fb4 = function(arg0, arg1, arg2, arg3) {
-        reCommon(getStringFromWasm0(arg0, arg1), getArrayU32FromWasm0(arg2, arg3));
-    };
-    imports.wbg.__wbg_reNormalAddressing_25df4a7c4b533b98 = function(arg0, arg1, arg2, arg3) {
-        reNormalAddressing(getStringFromWasm0(arg0, arg1), getArrayU32FromWasm0(arg2, arg3));
-    };
-    imports.wbg.__wbg_reIndexedAddressing_d447c4e896ace7dc = function(arg0, arg1, arg2, arg3) {
-        reIndexedAddressing(getStringFromWasm0(arg0, arg1), getArrayU32FromWasm0(arg2, arg3));
-    };
-    imports.wbg.__wbg_genericExplainedCode_9e90aff4c43288af = function(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
-        Logger.genericExplainedCode(getStringFromWasm0(arg0, arg1), getStringFromWasm0(arg2, arg3), getStringFromWasm0(arg4, arg5), getStringFromWasm0(arg6, arg7));
-    };
-    imports.wbg.__wbg_beginErr_4e1993eda23fe85f = function() {
-        Logger.beginErr();
-    };
-    imports.wbg.__wbg_write_b7bea71cc6467b3a = function(arg0, arg1) {
-        Logger.write(getStringFromWasm0(arg0, arg1));
-    };
-    imports.wbg.__wbg_writeCode_9ff2712977862a0b = function(arg0, arg1) {
-        Logger.writeCode(getStringFromWasm0(arg0, arg1));
-    };
-    imports.wbg.__wbg_endMessage_d1a864c2be12c3a5 = function() {
-        Logger.endMessage();
-    };
-    imports.wbg.__wbg_msgHandled_80ba449bb419716f = function() {
-        var ret = Logger.msgHandled();
-        return ret;
-    };
-    imports.wbg.__wbg_reset_a6e5dbb2f8134389 = function() {
-        Logger.reset();
-    };
-    imports.wbg.__wbg_setCurrentLine_84539ecdadd07769 = function(arg0, arg1) {
-        Logger.setCurrentLine(getStringFromWasm0(arg0, arg1));
-    };
-    imports.wbg.__wbg_genericExplainedCode_bd04d54eae1cd9c6 = function(arg0, arg1, arg2, arg3, arg4, arg5, arg6) {
-        Logger.genericExplainedCode(getStringFromWasm0(arg0, arg1), getStringFromWasm0(arg2, arg3), arg4, getStringFromWasm0(arg5, arg6));
+    imports.wbg.__wbg_alert_cbb3c828e758d24d = function(arg0, arg1) {
+        alert(getStringFromWasm0(arg0, arg1));
     };
     imports.wbg.__wbg_new_59cb74e423758ede = function() {
         var ret = new Error();
